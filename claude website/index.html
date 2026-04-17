@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PersonalQ</title>
+  <link rel="stylesheet" href="css/style.css?v=6" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Cinematic loading screen (Jitter-style) ─────── */
+    .loading-screen {
+      position: fixed; inset: 0; z-index: 999;
+      background: #060608;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Ambient glow */
+    .loading-glow {
+      position: absolute; width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,229,160,0.05) 0%, rgba(0,196,255,0.03) 40%, transparent 70%);
+      opacity: 0;
+      animation: glowPulse 4s ease-in-out 0.2s infinite;
+    }
+
+    /* Big cinematic title */
+    .loading-headline {
+      position: relative; z-index: 2;
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 0 0.3em;
+      text-align: center;
+    }
+
+    .loading-word {
+      display: inline-block;
+      font-size: clamp(52px, 8vw, 96px);
+      font-weight: 900;
+      letter-spacing: -3px;
+      line-height: 1.05;
+      opacity: 0;
+      transform: translateY(50px);
+      animation: wordSlideIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      /* Gradient text */
+      background: linear-gradient(135deg, #ffffff 0%, #00e5a0 45%, #00c4ff 75%, #a78bfa 100%);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Welcome subtitle */
+    .loading-subtitle {
+      position: relative; z-index: 2;
+      margin-top: 20px;
+      font-size: 16px; font-weight: 500; color: rgba(255,255,255,0.35);
+      letter-spacing: 0.1px;
+      opacity: 0;
+      animation: subtitleFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .loading-subtitle .user-name {
+      color: rgba(255,255,255,0.75); font-weight: 600;
+    }
+
+    /* Loading bar */
+    .loading-bar-wrap {
+      position: relative; z-index: 2;
+      width: 200px; height: 1px; margin-top: 48px;
+      background: rgba(255,255,255,0.06); border-radius: 99px;
+      overflow: hidden; opacity: 0;
+      animation: subtitleFade 0.5s ease-out forwards;
+    }
+    .loading-bar-fill {
+      height: 100%; width: 0%; border-radius: 99px;
+      background: linear-gradient(90deg, #00e5a0, #00c4ff);
+      animation: barFill 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .loading-screen.fade-out {
+      animation: screenFadeOut 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes wordSlideIn {
+      0%   { opacity: 0; transform: translateY(50px); filter: blur(6px); }
+      60%  { filter: blur(0); }
+      100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+    @keyframes subtitleFade {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.5; transform: scale(0.95); }
+      50%      { opacity: 1; transform: scale(1.05); }
+    }
+    @keyframes barFill {
+      0%   { width: 0%; }
+      30%  { width: 45%; }
+      60%  { width: 70%; }
+      85%  { width: 88%; }
+      100% { width: 100%; }
+    }
+    @keyframes screenFadeOut {
+      0%   { opacity: 1; }
+      100% { opacity: 0; pointer-events: none; }
+    }
+
+    /* ── Dashboard layout ────────────────────────────── */
+    .dash-hero {
+      text-align: center; padding: 64px 24px 24px;
+    }
+    .dash-hero-headline {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 0 0.25em;
+      margin-bottom: 16px;
+    }
+    .dash-hero-word {
+      display: inline-block;
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1.05;
+      opacity: 0;
+      transform: translateY(40px);
+      animation: wordSlideIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .dash-hero-word.gradient-word {
+      background: linear-gradient(135deg, #00e5a0 0%, #00c4ff 60%, #a78bfa 100%);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .dash-hero p {
+      color: var(--text-muted); font-size: 15px; max-width: 420px; margin: 0 auto;
+      opacity: 0;
+      animation: subtitleFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .dash-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px; max-width: 800px; margin: 0 auto; padding: 24px 32px 60px;
+    }
+
+    .dash-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px 24px;
+      cursor: pointer;
+      transition: border-color 0.3s, transform 0.25s, box-shadow 0.3s, background 0.3s;
+      animation: fadeSlideUp 0.5s ease-out both;
+      text-decoration: none; color: inherit; display: block;
+      position: relative; overflow: hidden;
+    }
+    .dash-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 60%);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .dash-card:hover::before { opacity: 1; }
+    .dash-card:nth-child(1) { animation-delay: 0.15s; }
+    .dash-card:nth-child(2) { animation-delay: 0.22s; }
+    .dash-card:nth-child(3) { animation-delay: 0.29s; }
+    .dash-card:nth-child(4) { animation-delay: 0.36s; }
+
+    .dash-card:hover {
+      border-color: rgba(0,229,160,0.2);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,229,160,0.06);
+      background: rgba(255,255,255,0.035);
+    }
+
+    .dash-icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 18px; font-size: 22px;
+    }
+    .dash-icon.goals   { background: rgba(0,229,160,0.08); color: #00e5a0; }
+    .dash-icon.budget  { background: rgba(0,196,255,0.08); color: #00c4ff; }
+    .dash-icon.journal { background: rgba(167,139,250,0.08); color: #a78bfa; }
+    .dash-icon.more    { background: rgba(255,255,255,0.03); color: var(--text-dim); }
+
+    .dash-card h3 {
+      font-size: 15px; font-weight: 700; margin-bottom: 6px;
+      letter-spacing: -0.1px; position: relative;
+    }
+    .dash-card p {
+      font-size: 12.5px; color: var(--text-muted); line-height: 1.55;
+      position: relative;
+    }
+    .dash-card .dash-tag {
+      display: inline-block; margin-top: 14px; font-size: 9.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.8px; padding: 3px 10px;
+      border-radius: 4px; position: relative;
+    }
+    .tag-live { background: rgba(0,229,160,0.08); color: #00e5a0; border: 1px solid rgba(0,229,160,0.15); }
+    .tag-soon { background: rgba(255,255,255,0.03); color: var(--text-dim); border: 1px solid rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body class="goals-page">
+
+  <!-- Cinematic loading screen -->
+  <div class="loading-screen" id="loading-screen">
+    <div class="loading-glow"></div>
+    <div class="loading-headline" id="loading-headline">
+      <!-- Words injected by JS with staggered delays -->
+    </div>
+    <div class="loading-subtitle" id="loading-welcome" style="animation-delay:0s">Welcome back</div>
+    <div class="loading-bar-wrap" style="animation-delay:0s">
+      <div class="loading-bar-fill"></div>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar" style="opacity:0" id="main-nav">
+    <span class="nav-brand nav-brand-animated">PersonalQ</span>
+    <div class="nav-right">
+      <span id="nav-username" class="nav-user"></span>
+      <button class="btn-logout" onclick="handleLogout()">Log Out</button>
+    </div>
+  </nav>
+
+  <!-- Dashboard content -->
+  <div id="dashboard" style="opacity:0">
+
+    <div class="dash-hero">
+      <div class="dash-hero-headline" id="dash-headline">
+        <!-- Words injected by JS -->
+      </div>
+      <p id="dash-sub" style="animation-delay:0s">Track your goals, manage your budget, and build the life you want.</p>
+    </div>
+
+    <div class="dash-grid">
+
+      <!-- Goal Tracker -->
+      <a class="dash-card" href="goals.html">
+        <div class="dash-icon goals">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <h3>Goal Tracker</h3>
+        <p>Set yearly goals, lock in progress, and watch your growth on a live chart.</p>
+        <span class="dash-tag tag-live">Live</span>
+      </a>
+
+      <!-- Budget Planner -->
+      <a class="dash-card" href="budget.html">
+        <div class="dash-icon budget">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <h3>Budget Planner</h3>
+        <p>Plan your income, expenses, and savings with smart tracking tools.</p>
+        <span class="dash-tag tag-live">Live</span>
+      </a>
+
+      <!-- Journal -->
+      <a class="dash-card" href="#">
+        <div class="dash-icon journal">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+          </svg>
+        </div>
+        <h3>Journal</h3>
+        <p>Write daily reflections, track your mood, and build mindful habits.</p>
+        <span class="dash-tag tag-soon">Coming Soon</span>
+      </a>
+
+      <!-- More -->
+      <a class="dash-card" href="#">
+        <div class="dash-icon more">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+          </svg>
+        </div>
+        <h3>More Features</h3>
+        <p>Habit tracker, fitness log, reading list, and more on the way.</p>
+        <span class="dash-tag tag-soon">Coming Soon</span>
+      </a>
+
+    </div>
+  </div>
+
+  <script>
+    // ─── Auth guard — must be logged in ────────────────
+    const session = localStorage.getItem('personalq_session');
+    if (!session) {
+      window.location.href = 'auth.html';
+    }
+
+    // ─── Read user from session ─────────────────────────
+    let userName = '', firstName = '';
+    try {
+      const user = JSON.parse(session);
+      userName  = user.name || '';
+      firstName = userName.split(' ')[0];
+    } catch(e) {}
+
+    document.getElementById('nav-username').textContent = userName;
+
+    // ─── Word-by-word animation helper ─────────────────
+    function buildWordLine(container, words, baseDelay, gradientIndices) {
+      gradientIndices = gradientIndices || [];
+      words.forEach((word, i) => {
+        const isLoading = container.id === 'loading-headline';
+        const span = document.createElement('span');
+        span.className = isLoading ? 'loading-word' : 'dash-hero-word';
+        if (!isLoading && gradientIndices.includes(i)) span.classList.add('gradient-word');
+        span.textContent = word;
+        span.style.animationDelay = (baseDelay + i * 0.18) + 's';
+        container.appendChild(span);
+      });
+    }
+
+    // ─── Build dashboard headline ───────────────────────
+    let dashBuilt = false;
+    function buildDashHero() {
+      if (dashBuilt) return;
+      dashBuilt = true;
+      const headline = document.getElementById('dash-headline');
+      const name = firstName || 'there';
+      const words = ['What', 'will', 'you', 'build,', name + '?'];
+      buildWordLine(headline, words, 0.1, [words.length - 1]);
+      const sub = document.getElementById('dash-sub');
+      sub.style.animationDelay = (0.1 + words.length * 0.18 + 0.2) + 's';
+    }
+
+    function revealDashboard() {
+      document.getElementById('loading-screen').style.display = 'none';
+      const nav = document.getElementById('main-nav');
+      nav.style.transition = 'opacity 0.4s ease-out';
+      nav.style.opacity = '1';
+      const dash = document.getElementById('dashboard');
+      dash.style.transition = 'opacity 0.4s ease-out';
+      dash.style.opacity = '1';
+      buildDashHero();
+      setTimeout(function() {
+        if (window.jitterAnimate) window.jitterAnimate(document.getElementById('dashboard'), 0.05);
+      }, 120);
+    }
+
+    // ─── Already in session — skip welcome entirely ─────
+    // sessionStorage resets only when the tab is closed (not on page navigation).
+    // So welcome shows once per login session, never on section-to-section movement.
+    const alreadyWelcomed = sessionStorage.getItem('pq_welcomed');
+
+    if (alreadyWelcomed) {
+      // Navigating back from Goals / Budget — instant reveal, no loading screen
+      revealDashboard();
+    } else {
+      // First load after login — show the cinematic welcome
+      sessionStorage.setItem('pq_welcomed', '1');
+
+      const loadingHeadline = document.getElementById('loading-headline');
+      buildWordLine(loadingHeadline, ['Personal', 'Q'], 0.4);
+
+      const welcomeEl = document.getElementById('loading-welcome');
+      const isFirstLogin = localStorage.getItem('personalq_first_login') === 'true';
+      if (isFirstLogin) localStorage.removeItem('personalq_first_login');
+
+      if (firstName) {
+        const greeting = isFirstLogin ? 'Welcome,' : 'Welcome back,';
+        welcomeEl.innerHTML = `${greeting} <span class="user-name">${firstName}</span>`;
+      } else {
+        welcomeEl.textContent = 'Welcome';
+      }
+      welcomeEl.style.animationDelay = '1.0s';
+      document.querySelector('.loading-bar-wrap').style.animationDelay = '1.3s';
+      document.querySelector('.loading-bar-fill').style.animationDelay = '1.5s';
+
+      setTimeout(() => {
+        const screen = document.getElementById('loading-screen');
+        screen.classList.add('fade-out');
+        setTimeout(revealDashboard, 700);
+      }, 3200);
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('personalq_session');
+      sessionStorage.removeItem('pq_welcomed');
+      window.location.href = 'auth.html';
+    }
+  </script>
+  <script src="js/jitter.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PersonalQ — Budget Planner</title>
+  <link rel="stylesheet" href="css/style.css?v=10" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body class="goals-page">
+
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand nav-brand-animated" style="text-decoration:none">PersonalQ</a>
+    <div class="nav-right">
+      <span id="nav-username" class="nav-user"></span>
+      <button class="btn-logout" onclick="handleLogout()">Log Out</button>
+    </div>
+  </nav>
+
+  <!-- Add Entry Modal -->
+  <div class="modal-overlay hidden" id="entry-modal">
+    <div class="modal-card">
+      <h3 id="entry-modal-title">Add Income</h3>
+      <input type="hidden" id="entry-type" value="income" />
+      <input class="modal-input" type="text" id="entry-name" placeholder="Source / Description" maxlength="60" />
+      <input class="modal-input" type="number" id="entry-amount" placeholder="Amount" min="0" step="0.01" />
+      <div class="modal-date-row">
+        <label class="modal-date-label">Category</label>
+        <select class="modal-input" id="entry-category"></select>
+      </div>
+      <div class="modal-date-row">
+        <label class="modal-date-label">Date paid</label>
+        <input type="date" id="entry-date" class="modal-input modal-date-input" />
+      </div>
+      <!-- Recurring toggle (expenses only) -->
+      <div class="modal-toggle-row" id="recurring-toggle-row" style="display:none">
+        <label class="toggle-label">
+          <input type="checkbox" id="entry-recurring" onchange="toggleRecurringDay()" />
+          Repeat every month
+        </label>
+      </div>
+      <div class="modal-date-row modal-day-row" id="recurring-day-row" style="display:none">
+        <label class="modal-date-label">Bill day (1–28)</label>
+        <input type="number" id="entry-recurring-day" class="modal-input modal-date-input"
+               min="1" max="28" placeholder="e.g. 1 for rent, 15 for Netflix" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeEntryModal()">Cancel</button>
+        <button class="btn-primary modal-confirm" onclick="saveEntry()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="goals-container">
+
+    <!-- Month Navigation -->
+    <div class="budget-month-nav">
+      <button class="year-nav-btn" onclick="changeMonth(-1)">‹</button>
+      <div class="year-nav-center">
+        <span class="year-display-main" id="budget-month-display"></span>
+      </div>
+      <button class="year-nav-btn" onclick="changeMonth(1)">›</button>
+    </div>
+
+    <!-- Spending Chart toggle at top -->
+    <button class="breakdown-toggle" id="breakdown-toggle" onclick="toggleBreakdown()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      View Spending Breakdown
+    </button>
+    <div class="chart-section" id="chart-section" style="display:none">
+      <div class="chart-header">
+        <span class="chart-label">Spending Breakdown</span>
+        <button class="chart-close-btn" onclick="toggleBreakdown()">✕</button>
+      </div>
+      <div class="chart-container" style="height:180px">
+        <canvas id="budget-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Compact Bento Summary Cards -->
+    <div class="budget-bento">
+      <div class="bento-card bento-income" id="bento-income-card">
+        <div class="bento-text">
+          <div class="bento-title">Income</div>
+          <div class="bento-sub">This month</div>
+          <div class="bento-value" id="total-income">$0</div>
+        </div>
+        <div class="bento-ring">
+          <svg width="52" height="52" viewBox="0 0 80 80">
+            <circle class="ring-track" cx="40" cy="40" r="30"/>
+            <circle class="ring-fill ring-income" id="ring-income" cx="40" cy="40" r="30"/>
+            <text class="ring-label" id="pct-income" x="40" y="40">0%</text>
+          </svg>
+        </div>
+        <div class="bento-trend up" id="trend-income">↑</div>
+      </div>
+      <div class="bento-card bento-expense" id="bento-expense-card">
+        <div class="bento-text">
+          <div class="bento-title">Expenses</div>
+          <div class="bento-sub">This month</div>
+          <div class="bento-value" id="total-expenses">$0</div>
+        </div>
+        <div class="bento-ring">
+          <svg width="52" height="52" viewBox="0 0 80 80">
+            <circle class="ring-track" cx="40" cy="40" r="30"/>
+            <circle class="ring-fill ring-expense" id="ring-expense" cx="40" cy="40" r="30"/>
+            <text class="ring-label" id="pct-expense" x="40" y="40">0%</text>
+          </svg>
+        </div>
+        <div class="bento-trend down" id="trend-expense">↓</div>
+      </div>
+      <div class="bento-card bento-balance" id="bento-balance-card">
+        <div class="bento-text">
+          <div class="bento-title">Balance</div>
+          <div class="bento-sub">Savings rate</div>
+          <div class="bento-value" id="total-balance">$0</div>
+        </div>
+        <div class="bento-ring">
+          <svg width="52" height="52" viewBox="0 0 80 80">
+            <circle class="ring-track" cx="40" cy="40" r="30"/>
+            <circle class="ring-fill ring-balance" id="ring-balance" cx="40" cy="40" r="30"/>
+            <text class="ring-label" id="pct-balance" x="40" y="40">0%</text>
+          </svg>
+        </div>
+        <div class="bento-trend flat" id="trend-balance">—</div>
+      </div>
+    </div>
+
+    <!-- Recurring Bills -->
+    <div class="recurring-section">
+      <div class="recurring-header">
+        <span class="recurring-title">Recurring Bills</span>
+      </div>
+      <div class="recurring-list" id="recurring-list"></div>
+    </div>
+
+    <!-- Add buttons -->
+    <div class="budget-actions">
+      <button class="budget-add-btn budget-add-income" onclick="openEntryModal('income')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Income
+      </button>
+      <button class="budget-add-btn budget-add-expense" onclick="openEntryModal('expense')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Expense
+      </button>
+    </div>
+
+    <!-- Transactions List -->
+    <div class="budget-section-head">
+      <h2>Transactions</h2>
+      <div class="budget-filter-tabs">
+        <button class="budget-filter active" data-filter="all" onclick="setFilter('all')">All</button>
+        <button class="budget-filter" data-filter="income" onclick="setFilter('income')">Income</button>
+        <button class="budget-filter" data-filter="expense" onclick="setFilter('expense')">Expenses</button>
+      </div>
+    </div>
+    <div class="budget-list" id="budget-list"></div>
+
+    <!-- Monthly Advice toggle at bottom -->
+    <button class="breakdown-toggle advice-toggle" id="advice-toggle" onclick="toggleAdvice()" style="margin-top:20px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Monthly Advice
+    </button>
+    <div class="advice-card" id="advice-card" style="display:none; margin-top:10px; margin-bottom:32px">
+      <div class="advice-header">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span class="advice-title">Monthly Advice</span>
+      </div>
+      <div class="advice-list" id="advice-list"></div>
+    </div>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="js/budget.js?v=2"></script>
+  <script src="js/jitter.js"></script>
+</body>
+</html>
